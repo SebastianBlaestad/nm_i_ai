@@ -49,7 +49,8 @@ This repo includes scripts for:
 - splitting images into train and validation sets,
 - generating a YOLO dataset config file,
 - training a baseline model,
-- running inference on images.
+- running inference on images,
+- experimenting with a custom YOLO architecture.
 
 ## Project Files Added
 
@@ -57,6 +58,8 @@ This repo includes scripts for:
 - `scripts/prepare_yolo_dataset.py`
 - `scripts/train_yolo.py`
 - `scripts/predict_yolo.py`
+- `models/grocery_yolov8_custom.yaml`
+- `models/grocery_yolov8_deeper.yaml`
 
 ## Recommended Environment
 
@@ -129,6 +132,50 @@ If you have a stronger GPU, you can later try:
 - more epochs
 - larger image size
 
+## Custom Model Architecture
+
+If you want to edit the network yourself, use:
+
+- `models/grocery_yolov8_custom.yaml`
+- `models/grocery_yolov8_deeper.yaml`
+
+The most important concept is:
+
+- the second number on each layer row is the repeat count,
+- increasing that repeat count adds more internal blocks,
+- in practice, that is the simplest way to add more "hidden layers".
+
+Examples:
+
+- `[-1, 3, C2f, [128, True]]` means that block is repeated `3` times
+- changing it to `[-1, 5, C2f, [128, True]]` makes that stage deeper
+
+Recommended first custom run:
+
+```bash
+python scripts/train_yolo.py \
+  --model models/grocery_yolov8_custom.yaml \
+  --weights yolov8n.pt \
+  --epochs 50 \
+  --imgsz 960
+```
+
+Recommended deeper experiment:
+
+```bash
+python scripts/train_yolo.py \
+  --model models/grocery_yolov8_deeper.yaml \
+  --weights yolov8n.pt \
+  --epochs 60 \
+  --imgsz 960
+```
+
+Notes:
+
+- `--model ...yaml` defines the architecture
+- `--weights yolov8n.pt` loads pretrained weights into matching layers
+- if partial weight loading fails in your installed version, fall back to the standard `.pt` baseline
+
 ## Step 3: Run Inference
 
 After training, run predictions on a few shelf images:
@@ -179,6 +226,18 @@ IoU means Intersection over Union. It measures how much the predicted box overla
 ### Why do we need a validation split?
 
 Because you need a held-out set to estimate whether the model is learning something useful rather than only memorizing training images.
+
+### Which activation function is used?
+
+For the current setup, the architecture follows the standard Ultralytics YOLO blocks, which use `SiLU` in the standard Conv blocks.
+
+### How many epochs should I use?
+
+Use these as practical starting points:
+
+- `30` epochs for a quick smoke test
+- `50` epochs for a first real baseline
+- `60-100` epochs for custom-architecture experiments if training remains stable
 
 ## Suggested First Run
 

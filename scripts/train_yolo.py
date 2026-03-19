@@ -18,7 +18,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         default="yolo11n.pt",
-        help="Pretrained YOLO checkpoint to fine-tune.",
+        help="Model checkpoint (.pt) or architecture config (.yaml).",
+    )
+    parser.add_argument(
+        "--weights",
+        default=None,
+        help="Optional pretrained weights to load when --model is a custom .yaml file.",
     )
     parser.add_argument(
         "--epochs",
@@ -79,6 +84,9 @@ def main() -> None:
         ) from exc
 
     model = YOLO(args.model)
+    if args.weights is not None:
+        model = model.load(args.weights)
+
     train_kwargs = {
         "data": str(args.data),
         "epochs": args.epochs,
